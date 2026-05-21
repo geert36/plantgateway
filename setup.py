@@ -43,6 +43,7 @@ setup(
         'miflora>=0.7.2,<0.8',
         'paho-mqtt>=1.6,<3',
         'PyYAML>=6.0.3',
+        'setuptools>=68',
     ],
     scripts=['plantgateway'],
     )
