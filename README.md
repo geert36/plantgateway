@@ -46,6 +46,18 @@ There are no command line parameters and there is no interaction required.
 You probably want to add the script to your cron tab to be executed 
 in regular intervals (e.q. every hour).
 
+To install a cron entry for the current user:
+
+```
+plantgateway-install-cron --interval 30
+```
+
+To remove the managed cron entry again:
+
+```
+plantgateway-remove-cron
+```
+
 # bluetooth preflight
 When `plantgateway` starts, it checks whether the configured Bluetooth adapter
 exists and is powered before reading sensors. The configured adapter defaults to
