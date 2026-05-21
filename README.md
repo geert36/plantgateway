@@ -55,6 +55,10 @@ Each sensor read is limited to 30 seconds by default, so a stuck Bluetooth
 connection cannot block the whole run indefinitely. Set `sensor_timeout: 0` in
 the configuration to disable this timeout.
 
+By default, timed-out `bluepy-helper` processes are not killed because that can
+produce noisy `BrokenPipeError` messages. Set `kill_bluepy_on_timeout: true` to
+force cleanup after each timeout.
+
 # health monitoring
 Every run publishes a retained MQTT health message to `<prefix>/health`, where
 `<prefix>` is the `mqtt.prefix` value from your configuration.
