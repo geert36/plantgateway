@@ -380,9 +380,25 @@ class PlantGateway:
         setitimer(timer_real, self.config.sensor_timeout)
         try:
             self.process_mac(sensor_config)
+        except TimeoutError:
+            self._stop_bluepy_helpers()
+            raise
         finally:
             setitimer(timer_real, 0)
             signal.signal(alarm_signal, previous_handler)
+
+    @staticmethod
+    def _stop_bluepy_helpers():
+        try:
+            subprocess.run(
+                ['pkill', '-f', 'bluepy-helper'],
+                capture_output=True,
+                check=False,
+                text=True,
+                timeout=5,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            logging.warning('Could not stop lingering bluepy-helper processes')
 
     def process_all(self):
         """Get data from all sensors."""
