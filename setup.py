@@ -8,9 +8,9 @@
 ##############################################
 """Setup for plantgateway."""
 from pathlib import Path
+import re
 
 from setuptools import setup
-from plantgw import __version__
 
 
 def readme():
@@ -18,9 +18,18 @@ def readme():
     return Path('README.md').read_text(encoding='utf-8')
 
 
+def version():
+    """Load the package version without importing runtime dependencies."""
+    init_file = Path('plantgw/__init__.py').read_text(encoding='utf-8')
+    match = re.search(r"^__version__ = ['\"]([^'\"]+)['\"]", init_file, re.MULTILINE)
+    if match:
+        return match.group(1)
+    raise RuntimeError('Could not find package version')
+
+
 setup(
     name='plantgateway',
-    version=__version__,
+    version=version(),
     description='Bluetooth to mqtt gateway for Xiaomi Mi plant sensors',
     long_description=readme(),
     long_description_content_type='text/markdown',
