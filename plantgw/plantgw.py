@@ -15,6 +15,7 @@ from enum import Enum
 import os
 import logging
 import json
+import signal
 import ssl
 import subprocess
 import time
@@ -74,6 +75,7 @@ class Configuration:
         if 'interface' in config:
             self.interface = config['interface']
 
+        self.sensor_timeout: int = 30
         self.mqtt_port: int = 8883
         self.mqtt_user: Optional[str] = None
         self.mqtt_password: Optional[str] = None
@@ -114,6 +116,9 @@ class Configuration:
 
         if 'discovery_prefix' in config['mqtt']:
             self.mqtt_discovery_prefix = config['mqtt']['discovery_prefix']
+
+        if 'sensor_timeout' in config:
+            self.sensor_timeout = config['sensor_timeout']
 
     @staticmethod
     def _configure_logging(config):
@@ -353,6 +358,32 @@ class PlantGateway:
         self.announce_sensor(sensor_config)
         self._publish(sensor_config, poller)
 
+    def process_mac_with_timeout(self, sensor_config: SensorConfig):
+        """Get data from one Sensor, bounded by the configured timeout."""
+        # pylint: disable=not-callable
+        alarm_signal = getattr(signal, 'SIGALRM', None)
+        timer_real = getattr(signal, 'ITIMER_REAL', None)
+        setitimer = getattr(signal, 'setitimer', None)
+        if self.config.sensor_timeout <= 0 or alarm_signal is None or timer_real is None or setitimer is None:
+            self.process_mac(sensor_config)
+            return
+
+        previous_handler = signal.getsignal(alarm_signal)
+
+        def _timeout_handler(signum, frame):
+            raise TimeoutError(
+                f'timed out after {self.config.sensor_timeout} seconds '
+                f'while reading sensor {sensor_config.get_topic()}'
+            )
+
+        signal.signal(alarm_signal, _timeout_handler)
+        setitimer(timer_real, self.config.sensor_timeout)
+        try:
+            self.process_mac(sensor_config)
+        finally:
+            setitimer(timer_real, 0)
+            signal.signal(alarm_signal, previous_handler)
+
     def process_all(self):
         """Get data from all sensors."""
         next_list = self.config.sensors
@@ -373,7 +404,7 @@ class PlantGateway:
             next_list = []
             for sensor in current_list:
                 try:
-                    self.process_mac(sensor)
+                    self.process_mac_with_timeout(sensor)
                 # pylint: disable=bare-except, broad-except
                 except Exception as exception:
                     next_list.append(sensor)  # if it failed, we'll try again in the next round
