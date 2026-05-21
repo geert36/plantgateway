@@ -45,5 +45,9 @@ setup(
         'PyYAML>=6.0.3',
         'setuptools>=68',
     ],
-    scripts=['plantgateway'],
+    scripts=[
+        'plantgateway',
+        'plantgateway-install-cron',
+        'plantgateway-remove-cron',
+    ],
     )
