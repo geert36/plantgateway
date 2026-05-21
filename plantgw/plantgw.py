@@ -76,6 +76,7 @@ class Configuration:
             self.interface = config['interface']
 
         self.sensor_timeout: int = 30
+        self.kill_bluepy_on_timeout: bool = False
         self.mqtt_port: int = 8883
         self.mqtt_user: Optional[str] = None
         self.mqtt_password: Optional[str] = None
@@ -119,6 +120,9 @@ class Configuration:
 
         if 'sensor_timeout' in config:
             self.sensor_timeout = config['sensor_timeout']
+
+        if 'kill_bluepy_on_timeout' in config:
+            self.kill_bluepy_on_timeout = config['kill_bluepy_on_timeout']
 
     @staticmethod
     def _configure_logging(config):
@@ -381,7 +385,8 @@ class PlantGateway:
         try:
             self.process_mac(sensor_config)
         except TimeoutError:
-            self._stop_bluepy_helpers()
+            if self.config.kill_bluepy_on_timeout:
+                self._stop_bluepy_helpers()
             raise
         finally:
             setitimer(timer_real, 0)
