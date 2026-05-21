@@ -42,6 +42,9 @@ mqtt:
 # Set to 0 to disable the timeout.
 # sensor_timeout: 30
 
+# Number of attempts per sensor in a single plantgateway run.
+# sensor_retries: 1
+
 # Kill lingering bluepy-helper processes after a sensor timeout.
 # This is disabled by default because it can produce BrokenPipeError noise.
 # kill_bluepy_on_timeout: false
