@@ -51,6 +51,10 @@ When `plantgateway` starts, it checks whether the configured Bluetooth adapter
 exists and is powered before reading sensors. The configured adapter defaults to
 `hci0`; set `interface: 1` in the configuration to use `hci1`.
 
+Each sensor read is limited to 30 seconds by default, so a stuck Bluetooth
+connection cannot block the whole run indefinitely. Set `sensor_timeout: 0` in
+the configuration to disable this timeout.
+
 # health monitoring
 Every run publishes a retained MQTT health message to `<prefix>/health`, where
 `<prefix>` is the `mqtt.prefix` value from your configuration.
