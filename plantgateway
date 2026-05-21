@@ -22,7 +22,12 @@ def main():
             print('Could not get data from {} sensor(s): {}.'.format(
                 len(failed_sensors),
                 SensorConfig.get_name_string(failed_sensors)))
-        status = 'error' if num_failed > 0 else 'ok'
+        if num_failed > 0:
+            status = 'error'
+        elif len(failed_sensors) > 0:
+            status = 'warning'
+        else:
+            status = 'ok'
         pg.publish_health(status, failed_sensors)
         sys.exit(num_failed)
     except Exception as exception:
