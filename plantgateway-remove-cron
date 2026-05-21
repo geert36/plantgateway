@@ -1,0 +1,7 @@
+#!/usr/bin/python3
+"""Remove plantgateway from the current user crontab."""
+from plantgw.cron import remove_cron
+
+
+if __name__ == '__main__':
+    remove_cron()
