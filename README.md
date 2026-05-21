@@ -46,6 +46,11 @@ There are no command line parameters and there is no interaction required.
 You probably want to add the script to your cron tab to be executed 
 in regular intervals (e.q. every hour).
 
+# bluetooth preflight
+When `plantgateway` starts, it checks whether the configured Bluetooth adapter
+exists and is powered before reading sensors. The configured adapter defaults to
+`hci0`; set `interface: 1` in the configuration to use `hci1`.
+
 # health monitoring
 Every run publishes a retained MQTT health message to `<prefix>/health`, where
 `<prefix>` is the `mqtt.prefix` value from your configuration.
