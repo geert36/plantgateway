@@ -197,6 +197,12 @@ class PlantGateway:
             self.mqtt_client.username_pw_set(self.config.mqtt_user, self.config.mqtt_password)
         if self.config.mqtt_ca_cert is not None:
             self.mqtt_client.tls_set(self.config.mqtt_ca_cert, cert_reqs=ssl.CERT_REQUIRED)
+        self.mqtt_client.will_set(
+            self._get_health_topic(),
+            json.dumps(self._build_health_payload('offline')),
+            qos=1,
+            retain=True,
+        )
 
         def _on_connect(client, _, flags, return_code, properties=None):
             self.connected = True
@@ -216,6 +222,32 @@ class PlantGateway:
         if hasattr(mqtt, 'CallbackAPIVersion'):
             return mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id=client_id)
         return mqtt.Client(client_id)
+
+    def publish_health(self, status: str, failed_sensors: Optional[List[SensorConfig]] = None, message: str = None):
+        """Publish a retained health message for monitoring."""
+        self.start_client()
+        payload = self._build_health_payload(status, failed_sensors, message)
+        publish_info = self.mqtt_client.publish(self._get_health_topic(), json.dumps(payload), qos=1, retain=True)
+        publish_info.wait_for_publish()
+        logging.info('sent health status %s to topic %s', status, self._get_health_topic())
+
+    def _build_health_payload(
+            self,
+            status: str,
+            failed_sensors: Optional[List[SensorConfig]] = None,
+            message: str = None):
+        failed_sensors = failed_sensors or []
+        return {
+            'status': status,
+            'timestamp': datetime.now().isoformat(),
+            'version': __version__,
+            'failed_count': len(failed_sensors),
+            'failed_sensors': [sensor.get_topic() for sensor in failed_sensors],
+            'message': message,
+        }
+
+    def _get_health_topic(self) -> str:
+        return '{}/health'.format(self.config.mqtt_prefix)
 
     def _publish(self, sensor_config: SensorConfig, poller: MiFloraPoller):
         self.start_client()
