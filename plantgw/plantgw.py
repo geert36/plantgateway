@@ -16,6 +16,7 @@ import os
 import logging
 import json
 import ssl
+import subprocess
 import time
 from datetime import datetime
 from typing import List, Optional
@@ -185,6 +186,8 @@ class PlantGateway:
 
     def stop_client(self):
         """Stop the mqtt client."""
+        if self.mqtt_client is None:
+            return
         if self.connected:
             self.mqtt_client.disconnect()
             self.connected = False
@@ -248,6 +251,72 @@ class PlantGateway:
 
     def _get_health_topic(self) -> str:
         return f'{self.config.mqtt_prefix}/health'
+
+    def check_bluetooth(self):
+        """Verify that the configured Bluetooth adapter exists and is powered."""
+        adapter = f'hci{self.config.interface}'
+        adapter_path = f'/sys/class/bluetooth/{adapter}'
+        if os.name != 'posix':
+            logging.warning('Skipping Bluetooth check on non-POSIX platform')
+            return
+        if not os.path.isdir('/sys/class/bluetooth'):
+            raise RuntimeError('Bluetooth is not available: /sys/class/bluetooth does not exist')
+        if not os.path.exists(adapter_path):
+            raise RuntimeError(f'Bluetooth adapter {adapter} was not found')
+
+        checked = self._check_hciconfig(adapter)
+        if not checked:
+            checked = self._check_bluetoothctl()
+        if not checked:
+            logging.warning('Bluetooth adapter %s exists, but no status command was available', adapter)
+            return
+        logging.info('Bluetooth adapter %s is available', adapter)
+
+    @staticmethod
+    def _check_hciconfig(adapter: str) -> bool:
+        try:
+            result = subprocess.run(
+                ['hciconfig', adapter],
+                capture_output=True,
+                check=False,
+                text=True,
+                timeout=5,
+            )
+        except FileNotFoundError:
+            return False
+        except subprocess.TimeoutExpired as exception:
+            raise RuntimeError(f'Bluetooth check timed out while running hciconfig {adapter}') from exception
+
+        output = result.stdout + result.stderr
+        if result.returncode != 0:
+            raise RuntimeError(f'Bluetooth adapter {adapter} could not be checked: {output.strip()}')
+        if 'UP' not in output:
+            raise RuntimeError(f'Bluetooth adapter {adapter} is present but not UP')
+        return True
+
+    @staticmethod
+    def _check_bluetoothctl() -> bool:
+        try:
+            result = subprocess.run(
+                ['bluetoothctl', 'show'],
+                capture_output=True,
+                check=False,
+                text=True,
+                timeout=5,
+            )
+        except FileNotFoundError:
+            return False
+        except subprocess.TimeoutExpired as exception:
+            raise RuntimeError('Bluetooth check timed out while running bluetoothctl show') from exception
+
+        output = result.stdout + result.stderr
+        if result.returncode != 0:
+            raise RuntimeError(f'Bluetooth controller could not be checked: {output.strip()}')
+        if 'Powered: no' in output:
+            raise RuntimeError('Bluetooth controller is present but powered off')
+        if 'Powered: yes' not in output:
+            logging.warning('Bluetooth controller status did not report a powered state')
+        return True
 
     def _publish(self, sensor_config: SensorConfig, poller: MiFloraPoller):
         self.start_client()
