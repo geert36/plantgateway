@@ -64,7 +64,7 @@ class Configuration:
     """Stores the program configuration."""
 
     def __init__(self, config_file_path):
-        with open(config_file_path, 'r') as config_file:
+        with open(config_file_path, 'r', encoding='utf-8') as config_file:
             config = yaml.load(config_file, Loader=yaml.FullLoader)
 
         self._configure_logging(config)
@@ -136,7 +136,7 @@ class SensorConfig:
         if mac is None:
             msg = 'mac of sensor must not be None'
             logging.error(msg)
-            raise Exception('mac of sensor must not be None')
+            raise ValueError('mac of sensor must not be None')
         self.mac = mac
         self.alias = alias
         self.fail_silent = fail_silent
@@ -247,7 +247,7 @@ class PlantGateway:
         }
 
     def _get_health_topic(self) -> str:
-        return '{}/health'.format(self.config.mqtt_prefix)
+        return f'{self.config.mqtt_prefix}/health'
 
     def _publish(self, sensor_config: SensorConfig, poller: MiFloraPoller):
         self.start_client()
@@ -255,7 +255,7 @@ class PlantGateway:
 
         data = {
             MQTTAttributes.BATTERY.value:      poller.parameter_value(MI_BATTERY),
-            MQTTAttributes.TEMPERATURE.value:  '{0:.1f}'.format(poller.parameter_value(MI_TEMPERATURE)),
+            MQTTAttributes.TEMPERATURE.value:  f'{poller.parameter_value(MI_TEMPERATURE):.1f}',
             MQTTAttributes.BRIGHTNESS.value:   poller.parameter_value(MI_LIGHT),
             MQTTAttributes.MOISTURE.value:     poller.parameter_value(MI_MOISTURE),
             MQTTAttributes.CONDUCTIVITY.value: poller.parameter_value(MI_CONDUCTIVITY),
@@ -309,8 +309,7 @@ class PlantGateway:
                 except Exception as exception:
                     next_list.append(sensor)  # if it failed, we'll try again in the next round
                     reason = str(exception) or exception.__class__.__name__
-                    msg = "could not read data from {} ({}) with reason: {}".format(
-                        sensor.mac, sensor.alias, reason)
+                    msg = f"could not read data from {sensor.mac} ({sensor.alias}) with reason: {reason}"
                     if sensor.fail_silent:
                         logging.error(msg)
                         logging.warning('fail_silent is set for sensor %s, so not raising an exception.', sensor.alias)
@@ -329,16 +328,16 @@ class PlantGateway:
         if self.config.mqtt_discovery_prefix is None:
             return
         self.start_client()
-        device_name = 'plant_{}'.format(sensor_config.short_mac)
+        device_name = f'plant_{sensor_config.short_mac}'
         for attribute in MQTTAttributes:
-            topic = '{}/sensor/{}_{}/config'.format(self.config.mqtt_discovery_prefix, device_name, attribute.value)
+            topic = f'{self.config.mqtt_discovery_prefix}/sensor/{device_name}_{attribute.value}/config'
             payload = {
                 'state_topic':         self._get_state_topic(sensor_config),
                 'unit_of_measurement': UNIT_OF_MEASUREMENT[attribute],
                 'value_template':      '{{value_json.'+attribute.value+'}}',
             }
             if sensor_config.alias is not None:
-                payload['name'] = '{}_{}'.format(sensor_config.alias, attribute.value)
+                payload['name'] = f'{sensor_config.alias}_{attribute.value}'
 
             if DEVICE_CLASS[attribute] is not None:
                 payload['device_class'] = DEVICE_CLASS[attribute]
