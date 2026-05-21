@@ -53,8 +53,9 @@ Every run publishes a retained MQTT health message to `<prefix>/health`, where
 The payload contains a `status` field:
 
 - `running`: plantgateway has started and is currently reading sensors
-- `ok`: the run completed without non-silent sensor failures
-- `error`: the run completed with failures or raised an exception
+- `ok`: the run completed without sensor failures
+- `warning`: the run completed with fail-silent sensor failures only
+- `error`: the run completed with non-silent failures or raised an exception
 - `offline`: the MQTT connection was lost unexpectedly after startup
 
 If plantgateway hangs while reading a sensor, the retained health message will
