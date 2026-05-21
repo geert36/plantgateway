@@ -61,7 +61,7 @@ DEVICE_CLASS = {
 }
 
 
-# pylint: disable-msg=too-many-instance-attributes
+# pylint: disable-msg=too-many-branches,too-many-instance-attributes
 class Configuration:
     """Stores the program configuration."""
 
@@ -76,6 +76,7 @@ class Configuration:
             self.interface = config['interface']
 
         self.sensor_timeout: int = 30
+        self.sensor_retries: int = 1
         self.kill_bluepy_on_timeout: bool = False
         self.mqtt_port: int = 8883
         self.mqtt_user: Optional[str] = None
@@ -120,6 +121,9 @@ class Configuration:
 
         if 'sensor_timeout' in config:
             self.sensor_timeout = config['sensor_timeout']
+
+        if 'sensor_retries' in config:
+            self.sensor_retries = max(1, config['sensor_retries'])
 
         if 'kill_bluepy_on_timeout' in config:
             self.kill_bluepy_on_timeout = config['kill_bluepy_on_timeout']
@@ -409,7 +413,7 @@ class PlantGateway:
         """Get data from all sensors."""
         next_list = self.config.sensors
         timeout = 1  # initial timeout in seconds
-        max_retry = 6  # number of retries
+        max_retry = self.config.sensor_retries
         retry_count = 0
 
         while retry_count < max_retry and next_list:
