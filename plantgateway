@@ -14,6 +14,7 @@ def main():
     pg = None
     try:
         pg = PlantGateway()
+        pg.check_bluetooth()
         pg.publish_health('running')
         failed_sensors = pg.process_all()
         # only count the sensors that are NOT fail silent
