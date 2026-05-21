@@ -46,6 +46,21 @@ There are no command line parameters and there is no interaction required.
 You probably want to add the script to your cron tab to be executed 
 in regular intervals (e.q. every hour).
 
+# health monitoring
+Every run publishes a retained MQTT health message to `<prefix>/health`, where
+`<prefix>` is the `mqtt.prefix` value from your configuration.
+
+The payload contains a `status` field:
+
+- `running`: plantgateway has started and is currently reading sensors
+- `ok`: the run completed without non-silent sensor failures
+- `error`: the run completed with failures or raised an exception
+- `offline`: the MQTT connection was lost unexpectedly after startup
+
+If plantgateway hangs while reading a sensor, the retained health message will
+remain `running` with an old `timestamp`. In Home Assistant you can alert on
+that stale timestamp.
+
 # integration in home automation
 
 ## HomeAssistant
