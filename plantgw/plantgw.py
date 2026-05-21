@@ -308,8 +308,9 @@ class PlantGateway:
                 # pylint: disable=bare-except, broad-except
                 except Exception as exception:
                     next_list.append(sensor)  # if it failed, we'll try again in the next round
+                    reason = str(exception) or exception.__class__.__name__
                     msg = "could not read data from {} ({}) with reason: {}".format(
-                        sensor.mac, sensor.alias, str(exception))
+                        sensor.mac, sensor.alias, reason)
                     if sensor.fail_silent:
                         logging.error(msg)
                         logging.warning('fail_silent is set for sensor %s, so not raising an exception.', sensor.alias)
