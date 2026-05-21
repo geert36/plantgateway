@@ -7,14 +7,15 @@
 #
 ##############################################
 """Setup for plantgateway."""
+from pathlib import Path
+
 from setuptools import setup
 from plantgw import __version__
 
 
 def readme():
     """Load the readme file."""
-    with open('README.md', 'r') as readme_file:
-        return readme_file.read()
+    return Path('README.md').read_text(encoding='utf-8')
 
 
 setup(
@@ -25,8 +26,14 @@ setup(
     long_description_content_type='text/markdown',
     author='Christian Kühnel',
     author_email='christian.kuehnel@gmail.com',
-    url='https://www.python.org/sigs/distutils-sig/',
+    url='https://github.com/ChristianKuehnel/plantgateway',
     packages=['plantgw'],
-    install_requires=['bluepy==1.3.0', 'paho-mqtt', 'pyyaml>=5.1', 'miflora==0.6', 'typing>=3,<4'],
+    python_requires='>=3.8',
+    install_requires=[
+        'bluepy==1.3.0',
+        'miflora>=0.7.2,<0.8',
+        'paho-mqtt>=1.6,<3',
+        'PyYAML>=6.0.3',
+    ],
     scripts=['plantgateway'],
     )
