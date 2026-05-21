@@ -15,6 +15,7 @@ from enum import Enum
 import os
 import logging
 import json
+import ssl
 import time
 from datetime import datetime
 from typing import List, Optional
@@ -72,15 +73,15 @@ class Configuration:
         if 'interface' in config:
             self.interface = config['interface']
 
-        self.mqtt_port = 8883  # type: int
-        self.mqtt_user = None  # type: Optional[str]
-        self.mqtt_password = None  # type: Optional[str]
-        self.mqtt_ca_cert = None  # type: Optional[str]
-        self.mqtt_client_id = None  # type: Optional[str]
-        self.mqtt_trailing_slash = True  # type:bool
-        self.mqtt_timestamp_format = None  # type: Optional[str]
-        self.mqtt_discovery_prefix = None  # type: Optional[str]
-        self.sensors = []  # type: List[SensorConfig]
+        self.mqtt_port: int = 8883
+        self.mqtt_user: Optional[str] = None
+        self.mqtt_password: Optional[str] = None
+        self.mqtt_ca_cert: Optional[str] = None
+        self.mqtt_client_id: Optional[str] = None
+        self.mqtt_trailing_slash: bool = True
+        self.mqtt_timestamp_format: Optional[str] = None
+        self.mqtt_discovery_prefix: Optional[str] = None
+        self.sensors: List[SensorConfig] = []
 
         if 'port' in config['mqtt']:
             self.mqtt_port = config['mqtt']['port']
@@ -175,7 +176,7 @@ class PlantGateway:
         logging.info('PlantGateway version %s', __version__)
         logging.info('loaded config file from %s', config_file_path)
         self.mqtt_client = None
-        self.connected = False  # type: bool
+        self.connected: bool = False
 
     def start_client(self):
         """Start the mqtt client."""
@@ -191,19 +192,30 @@ class PlantGateway:
         logging.info('Disconnected MQTT connection')
 
     def _start_client(self):
-        self.mqtt_client = mqtt.Client(self.config.mqtt_client_id)
+        self.mqtt_client = self._create_mqtt_client(self.config.mqtt_client_id)
         if self.config.mqtt_user is not None:
             self.mqtt_client.username_pw_set(self.config.mqtt_user, self.config.mqtt_password)
         if self.config.mqtt_ca_cert is not None:
-            self.mqtt_client.tls_set(self.config.mqtt_ca_cert, cert_reqs=mqtt.ssl.CERT_REQUIRED)
+            self.mqtt_client.tls_set(self.config.mqtt_ca_cert, cert_reqs=ssl.CERT_REQUIRED)
 
-        def _on_connect(client, _, flags, return_code):
+        def _on_connect(client, _, flags, return_code, properties=None):
             self.connected = True
-            logging.info("MQTT connection returned result: %s", mqtt.connack_string(return_code))
+            try:
+                result = mqtt.connack_string(return_code)
+            except TypeError:
+                result = str(return_code)
+            logging.info("MQTT connection returned result: %s", result)
         self.mqtt_client.on_connect = _on_connect
 
         self.mqtt_client.connect(self.config.mqtt_server, self.config.mqtt_port, 60)
         self.mqtt_client.loop_start()
+
+    @staticmethod
+    def _create_mqtt_client(client_id):
+        """Create a Paho MQTT client across the 1.x and 2.x constructor APIs."""
+        if hasattr(mqtt, 'CallbackAPIVersion'):
+            return mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2, client_id=client_id)
+        return mqtt.Client(client_id)
 
     def _publish(self, sensor_config: SensorConfig, poller: MiFloraPoller):
         self.start_client()
