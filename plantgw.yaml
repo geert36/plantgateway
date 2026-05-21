@@ -42,6 +42,10 @@ mqtt:
 # Set to 0 to disable the timeout.
 # sensor_timeout: 30
 
+# Kill lingering bluepy-helper processes after a sensor timeout.
+# This is disabled by default because it can produce BrokenPipeError noise.
+# kill_bluepy_on_timeout: false
+
 # sensor configuration, replace this with the configuration of your sensors
 sensors:
     # bluetooth mac of the sensor, mandatory
