@@ -100,11 +100,13 @@ force cleanup after each timeout.
 
 # health monitoring
 Every run publishes a retained MQTT health message to `<prefix>/health`, where
-`<prefix>` is the `mqtt.prefix` value from your configuration.
+`<prefix>` is the `mqtt.prefix` value from your configuration. By default,
+plantgateway publishes one health message at the end of each run.
 
 The payload contains a `status` field:
 
-- `running`: plantgateway has started and is currently reading sensors
+- `running`: plantgateway has started and is currently reading sensors, if
+  `mqtt.health_on_start: true` is enabled
 - `ok`: the run completed without non-silent sensor failures
 - `warning`: the run completed with fail-silent sensor failures only
 - `error`: the run completed with failures or raised an exception
@@ -112,8 +114,8 @@ The payload contains a `status` field:
   `mqtt.last_will: true` is enabled
 
 If plantgateway hangs while reading a sensor, the retained health message will
-remain `running` with an old `timestamp`. In Home Assistant you can alert on
-that stale timestamp.
+keep its previous value with an old `timestamp`. In Home Assistant you can
+alert on that stale timestamp.
 
 For cron-based runs, `mqtt.last_will` is disabled by default to avoid false
 `offline` states after short-lived runs. The stale health automation below is
@@ -217,7 +219,7 @@ In case you have any problem with plantgateway, please check:
 
 - Is you configuration file a valid YAML file?
 - Does your Bluetooth dongle support Bluetooh Low Energy? Check with `sudo hcitool lescan`, this should list all Low Energy devices.
-- If you have connection issues, please try a system update `sudo apt update; sudo apt dist-upgrade`. This fixes these issues usually.
+- If you have connection issues, please try a system update `sudo apt update; sudo dist-upgrade`. This fixes these issues usually.
 
 If all this does not help, please file a bug ticket in github.
 
