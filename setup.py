@@ -47,6 +47,7 @@ setup(
     ],
     scripts=[
         'plantgateway',
+        'plantgateway-setup',
         'plantgateway-install-cron',
         'plantgateway-remove-cron',
     ],
