@@ -15,7 +15,8 @@ def main():
     try:
         pg = PlantGateway()
         pg.check_bluetooth()
-        pg.publish_health('running')
+        if pg.config.mqtt_health_on_start:
+            pg.publish_health('running')
         failed_sensors = pg.process_all()
         # only count the sensors that are NOT fail silent
         num_failed = len([s for s in failed_sensors if not s.fail_silent])
