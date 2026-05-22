@@ -37,6 +37,23 @@ Copy the [plantgw.yaml](plantgw.yaml) (in this repository) to your home director
 rename it to ".plantgw.yaml".
 Then change this file to match your requirements.
 
+# first setup
+You can scan for nearby Xiaomi Flower Care sensors:
+
+```
+plantgateway-setup
+```
+
+To add discovered Flower Care sensors to your config:
+
+```
+plantgateway-setup --write
+```
+
+The setup helper only adds sensors that are not already in the config. If the
+config file does not exist yet, it creates `~/.plantgw.yaml` with placeholder
+MQTT settings that you still need to fill in.
+
 # execution
 After the installation with pip you can simply run the tool from the command line:
 ```
@@ -81,9 +98,9 @@ Every run publishes a retained MQTT health message to `<prefix>/health`, where
 The payload contains a `status` field:
 
 - `running`: plantgateway has started and is currently reading sensors
-- `ok`: the run completed without sensor failures
+- `ok`: the run completed without non-silent sensor failures
 - `warning`: the run completed with fail-silent sensor failures only
-- `error`: the run completed with non-silent failures or raised an exception
+- `error`: the run completed with failures or raised an exception
 - `offline`: the MQTT connection was lost unexpectedly after startup
 
 If plantgateway hangs while reading a sensor, the retained health message will
