@@ -61,7 +61,7 @@ DEVICE_CLASS = {
 }
 
 
-# pylint: disable-msg=too-many-branches,too-many-instance-attributes
+# pylint: disable-msg=too-many-branches,too-many-instance-attributes,too-many-statements
 class Configuration:
     """Stores the program configuration."""
 
@@ -86,6 +86,7 @@ class Configuration:
         self.mqtt_trailing_slash: bool = True
         self.mqtt_timestamp_format: Optional[str] = None
         self.mqtt_discovery_prefix: Optional[str] = None
+        self.mqtt_health_on_start: bool = False
         self.mqtt_last_will: bool = False
         self.sensors: List[SensorConfig] = []
 
@@ -109,6 +110,9 @@ class Configuration:
 
         if 'timestamp_format' in config['mqtt']:
             self.mqtt_timestamp_format = config['mqtt']['timestamp_format']
+
+        if 'health_on_start' in config['mqtt']:
+            self.mqtt_health_on_start = config['mqtt']['health_on_start']
 
         if 'last_will' in config['mqtt']:
             self.mqtt_last_will = config['mqtt']['last_will']
