@@ -31,6 +31,10 @@ mqtt:
     #format for timestamp string using strftime(), optional as defaults to ISO8601 format
     #timestamp_format: "%d/%m/%y %H:%M:%S"
 
+    # Publish a "running" health message at the start of every run.
+    # Disabled by default to keep cron-based runs to one health message.
+    #health_on_start: false
+
     # Publish an MQTT Last Will "offline" health message if the MQTT connection
     # drops unexpectedly. Disabled by default for cron runs because a short-lived
     # script can otherwise produce false offline health states.
