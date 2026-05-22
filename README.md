@@ -107,6 +107,65 @@ If plantgateway hangs while reading a sensor, the retained health message will
 remain `running` with an old `timestamp`. In Home Assistant you can alert on
 that stale timestamp.
 
+## Home Assistant health automation
+If your MQTT prefix is `homeassistant/plant`, add a health sensor like this:
+
+```yaml
+mqtt:
+  sensor:
+    - name: Plantgateway Health
+      unique_id: plantgateway_health
+      state_topic: "homeassistant/plant/health"
+      value_template: "{{ value_json.status }}"
+      json_attributes_topic: "homeassistant/plant/health"
+```
+
+Then add automations for bad health states and stale health updates. Replace
+`notify.mobile_app_your_phone` with your own notification service.
+
+```yaml
+automation:
+  - alias: Plantgateway health problem
+    mode: single
+    trigger:
+      - platform: mqtt
+        topic: "homeassistant/plant/health"
+    condition:
+      - condition: template
+        value_template: "{{ trigger.payload_json.status in ['warning', 'error', 'offline'] }}"
+    action:
+      - service: notify.mobile_app_your_phone
+        data:
+          title: "Plantgateway health"
+          message: >-
+            Plantgateway status is {{ trigger.payload_json.status }}.
+            Failed sensors: {{ trigger.payload_json.failed_count }}.
+            {{ trigger.payload_json.message or '' }}
+
+  - alias: Plantgateway health stale
+    mode: single
+    trigger:
+      - platform: time_pattern
+        minutes: "/10"
+    condition:
+      - condition: template
+        value_template: >-
+          {% set state = states('sensor.plantgateway_health') %}
+          {% if state in ['unknown', 'unavailable'] %}
+            true
+          {% else %}
+            {{ (now() - states.sensor.plantgateway_health.last_updated).total_seconds() > 2700 }}
+          {% endif %}
+    action:
+      - service: notify.mobile_app_your_phone
+        data:
+          title: "Plantgateway health"
+          message: "Plantgateway has not sent a health update for more than 45 minutes."
+```
+
+The stale check uses 45 minutes because the example cron interval is 30 minutes.
+Increase or decrease `2700` seconds if you run plantgateway more or less often.
+
 # integration in home automation
 
 ## HomeAssistant
