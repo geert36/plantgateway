@@ -69,6 +69,13 @@ To install a cron entry for the current user:
 plantgateway-install-cron --interval 30
 ```
 
+The managed cron entry writes output to `~/plantgateway-cron.log` by default.
+Check that file if the scheduled run does not seem to work:
+
+```
+tail -f ~/plantgateway-cron.log
+```
+
 To remove the managed cron entry again:
 
 ```
