@@ -31,6 +31,11 @@ mqtt:
     #format for timestamp string using strftime(), optional as defaults to ISO8601 format
     #timestamp_format: "%d/%m/%y %H:%M:%S"
 
+    # Publish an MQTT Last Will "offline" health message if the MQTT connection
+    # drops unexpectedly. Disabled by default for cron runs because a short-lived
+    # script can otherwise produce false offline health states.
+    #last_will: false
+
 # Select the bluetooth interface to be used.
 # If this parameter is not defined, interface 0 will be used.
 # 0 = /dev/hci0
