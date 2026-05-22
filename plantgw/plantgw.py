@@ -202,8 +202,18 @@ class PlantGateway:
 
     def start_client(self):
         """Start the mqtt client."""
-        if not self.connected:
+        if self.connected:
+            return
+        if self.mqtt_client is None:
             self._start_client()
+        self._wait_for_mqtt_connection()
+
+    def _wait_for_mqtt_connection(self):
+        timeout_at = time.monotonic() + 10
+        while not self.connected and time.monotonic() < timeout_at:
+            time.sleep(0.1)
+        if not self.connected:
+            raise RuntimeError('Timed out while connecting to MQTT server')
 
     def stop_client(self):
         """Stop the mqtt client."""
