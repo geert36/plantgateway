@@ -1,0 +1,7 @@
+#!/usr/bin/python3
+"""Command line entry point for the plantgateway first setup helper."""
+from plantgw.setup_wizard import main
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
