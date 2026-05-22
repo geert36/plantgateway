@@ -124,43 +124,44 @@ Then add automations for bad health states and stale health updates. Replace
 `notify.mobile_app_your_phone` with your own notification service.
 
 ```yaml
-automation:
-  - alias: Plantgateway health problem
-    mode: single
-    trigger:
-      - platform: mqtt
-        topic: "homeassistant/plant/health"
-    condition:
-      - condition: template
-        value_template: "{{ trigger.payload_json.status in ['warning', 'error', 'offline'] }}"
-    action:
-      - service: notify.mobile_app_your_phone
-        data:
-          title: "Plantgateway health"
-          message: >-
-            Plantgateway status is {{ trigger.payload_json.status }}.
-            Failed sensors: {{ trigger.payload_json.failed_count }}.
-            {{ trigger.payload_json.message or '' }}
+- alias: Plantgateway health problem
+  description: ""
+  triggers:
+    - trigger: mqtt
+      topic: "homeassistant/plant/health"
+  conditions:
+    - condition: template
+      value_template: "{{ trigger.payload_json.status in ['warning', 'error', 'offline'] }}"
+  actions:
+    - action: notify.mobile_app_your_phone
+      data:
+        title: "Plantgateway health"
+        message: |-
+          Plantgateway status is {{ trigger.payload_json.status }}.
+          Failed sensors: {{ trigger.payload_json.failed_count }}.
+          {{ trigger.payload_json.message or '' }}
+  mode: single
 
-  - alias: Plantgateway health stale
-    mode: single
-    trigger:
-      - platform: time_pattern
-        minutes: "/10"
-    condition:
-      - condition: template
-        value_template: >-
-          {% set state = states('sensor.plantgateway_health') %}
-          {% if state in ['unknown', 'unavailable'] %}
-            true
-          {% else %}
-            {{ (now() - states.sensor.plantgateway_health.last_updated).total_seconds() > 2700 }}
-          {% endif %}
-    action:
-      - service: notify.mobile_app_your_phone
-        data:
-          title: "Plantgateway health"
-          message: "Plantgateway has not sent a health update for more than 45 minutes."
+- alias: Plantgateway health stale
+  description: ""
+  triggers:
+    - trigger: time_pattern
+      minutes: "/10"
+  conditions:
+    - condition: template
+      value_template: >-
+        {% set state = states('sensor.plantgateway_health') %}
+        {% if state in ['unknown', 'unavailable'] %}
+          true
+        {% else %}
+          {{ (now() - states.sensor.plantgateway_health.last_updated).total_seconds() > 2700 }}
+        {% endif %}
+  actions:
+    - action: notify.mobile_app_your_phone
+      data:
+        title: "Plantgateway health"
+        message: "Plantgateway has not sent a health update for more than 45 minutes."
+  mode: single
 ```
 
 The stale check uses 45 minutes because the example cron interval is 30 minutes.
