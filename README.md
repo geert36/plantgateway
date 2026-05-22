@@ -108,11 +108,16 @@ The payload contains a `status` field:
 - `ok`: the run completed without non-silent sensor failures
 - `warning`: the run completed with fail-silent sensor failures only
 - `error`: the run completed with failures or raised an exception
-- `offline`: the MQTT connection was lost unexpectedly after startup
+- `offline`: the MQTT connection was lost unexpectedly after startup, if
+  `mqtt.last_will: true` is enabled
 
 If plantgateway hangs while reading a sensor, the retained health message will
 remain `running` with an old `timestamp`. In Home Assistant you can alert on
 that stale timestamp.
+
+For cron-based runs, `mqtt.last_will` is disabled by default to avoid false
+`offline` states after short-lived runs. The stale health automation below is
+the recommended way to detect a stuck plantgateway run.
 
 ## Home Assistant health automation
 If your MQTT prefix is `homeassistant/plant`, add a health sensor like this:
