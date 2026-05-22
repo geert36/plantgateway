@@ -1,5 +1,6 @@
 """Cron helpers for plantgateway."""
 import argparse
+import os
 import shutil
 import subprocess
 import sys
@@ -24,17 +25,30 @@ def install_cron():
         default=_default_plantgateway_command(),
         help='Command to run from cron. Defaults to the installed plantgateway command.',
     )
+    parser.add_argument(
+        '--log-file',
+        default='~/plantgateway-cron.log',
+        help='File where cron output is written. Defaults to ~/plantgateway-cron.log.',
+    )
     args = parser.parse_args()
 
     if args.interval < 1 or args.interval > 59:
         raise SystemExit('--interval must be between 1 and 59 minutes')
 
     current_crontab = _read_crontab()
-    cron_line = f'*/{args.interval} * * * * {args.command}'
+    log_file = Path(args.log_file).expanduser()
+    cron_line = f'*/{args.interval} * * * * {args.command} >> {log_file} 2>&1'
     updated_crontab = _without_managed_block(current_crontab)
-    updated_crontab.extend([BEGIN_MARKER, cron_line, END_MARKER])
+    updated_crontab.extend([
+        BEGIN_MARKER,
+        'SHELL=/bin/sh',
+        f'PATH={_cron_path()}',
+        cron_line,
+        END_MARKER,
+    ])
     _write_crontab(updated_crontab)
     print(f'Installed plantgateway cron entry: {cron_line}')
+    print(f'Cron output will be written to: {log_file}')
 
 
 def remove_cron():
@@ -56,6 +70,27 @@ def _default_plantgateway_command():
     if command:
         return command
     return 'plantgateway'
+
+
+def _cron_path():
+    script_path = Path(sys.argv[0]).resolve()
+    path_parts = [
+        str(script_path.parent),
+        '/usr/local/sbin',
+        '/usr/local/bin',
+        '/usr/sbin',
+        '/usr/bin',
+        '/sbin',
+        '/bin',
+    ]
+    current_path = os.environ.get('PATH')
+    if current_path:
+        path_parts.extend(current_path.split(os.pathsep))
+    unique_parts = []
+    for part in path_parts:
+        if part and part not in unique_parts:
+            unique_parts.append(part)
+    return ':'.join(unique_parts)
 
 
 def _read_crontab():
