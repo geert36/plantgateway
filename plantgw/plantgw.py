@@ -86,6 +86,7 @@ class Configuration:
         self.mqtt_trailing_slash: bool = True
         self.mqtt_timestamp_format: Optional[str] = None
         self.mqtt_discovery_prefix: Optional[str] = None
+        self.mqtt_last_will: bool = False
         self.sensors: List[SensorConfig] = []
 
         if 'port' in config['mqtt']:
@@ -108,6 +109,9 @@ class Configuration:
 
         if 'timestamp_format' in config['mqtt']:
             self.mqtt_timestamp_format = config['mqtt']['timestamp_format']
+
+        if 'last_will' in config['mqtt']:
+            self.mqtt_last_will = config['mqtt']['last_will']
 
         self.mqtt_server = config['mqtt']['server']
         self.mqtt_prefix = config['mqtt']['prefix']
@@ -213,12 +217,13 @@ class PlantGateway:
             self.mqtt_client.username_pw_set(self.config.mqtt_user, self.config.mqtt_password)
         if self.config.mqtt_ca_cert is not None:
             self.mqtt_client.tls_set(self.config.mqtt_ca_cert, cert_reqs=ssl.CERT_REQUIRED)
-        self.mqtt_client.will_set(
-            self._get_health_topic(),
-            json.dumps(self._build_health_payload('offline')),
-            qos=1,
-            retain=True,
-        )
+        if self.config.mqtt_last_will:
+            self.mqtt_client.will_set(
+                self._get_health_topic(),
+                json.dumps(self._build_health_payload('offline')),
+                qos=1,
+                retain=True,
+            )
 
         def _on_connect(client, _, flags, return_code, properties=None):
             self.connected = True
